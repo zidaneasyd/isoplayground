@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Iso Playground</title>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<header>
+<div class="header-left">
+<h1>Iso Playground</h1>
+<nav id="top-nav">
+<div class="menu-item">
+<button class="menu-btn" data-ip-event-click="toggleMenu(event, this)">File</button>
+<div class="dropdown">
+<button data-ip-event-click="resetProject()">Proyek Baru <span class="shortcut">Ctrl+N</span></button>
+<button data-ip-event-click="importProjectJSON()">Impor JSON... <span class="shortcut">Ctrl+I</span></button>
+<button data-ip-event-click="exportProjectJSON()">Simpan Proyek <span class="shortcut">Ctrl+E</span></button>
+<hr/>
+<button data-ip-event-click="exportPNG()">Ekspor Gambar PNG</button>
+</div>
+</div>
+<div class="menu-item">
+<button class="menu-btn" data-ip-event-click="toggleMenu(event, this)">Edit</button>
+<div class="dropdown">
+<button data-ip-event-click="undoCube()">Urungkan (Undo) <span class="shortcut">Ctrl+Z</span></button>
+<button data-ip-event-click="clearCubes()">Hapus Semua Objek</button>
+<hr/>
+<button data-ip-event-click="resetCamera()">Reset Posisi Kamera</button>
+</div>
+</div>
+<div class="menu-item">
+<button class="menu-btn" data-ip-event-click="toggleMenu(event, this)">Tampilan</button>
+<div class="dropdown">
+<button data-ip-event-click="toggleLeftPanel()">Buka / Tutup Panel Kiri</button>
+<hr/>
+<button data-ip-event-click="zoomStep(1.2)">Perbesar (Zoom In) <span class="shortcut">+</span></button>
+<button data-ip-event-click="zoomStep(0.8)">Perkecil (Zoom Out) <span class="shortcut">-</span></button>
+<button data-ip-event-click="resetCamera()">Zoom 100% <span class="shortcut">0</span></button>
+</div>
+</div>
+<div class="menu-item">
+<button class="menu-btn" data-ip-event-click="toggleMenu(event, this)">Bantuan</button>
+<div class="dropdown">
+<button data-ip-event-click="alert('Player (8 arah WASD / Panah):\nW: -x-z | A: -x+z | S: +z+x | D: -z+x\nW+A: -x | A+S: +z | S+D: +x | D+W: -z\nNPC: Gerak acak bebas\nObject: Gerak per-petak saat aktif\nDelete: Hapus objek aktif\nCtrl+E / Ctrl+I: Ekspor / Impor JSON\nAlt+C: Command (/player, /object, /enemy, cycle -idle|-run|-attack)')">Panduan Navigasi</button>
+<button data-ip-event-click="alert('Iso Playground')">Tentang</button>
+</div>
+</div>
+</nav>
+</div>
+<span class="header-right" id="header-grid-info">Plane 12 × 12 m²</span>
+</header>
+<div class="top-right-actions">
+<button aria-label="Simpan Proyek" class="icon-info-btn custom-tooltip" data-ip-event-click="exportProjectJSON()" data-tooltip="Simpan Proyek (Ctrl+E)" type="button"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8M7 3v5h8"></path></svg></button>
+<button aria-label="Sandbox" class="icon-info-btn custom-tooltip" data-ip-event-click="openSandbox()" data-tooltip="Buka Sandbox di tab baru" type="button"><svg fill="currentColor" stroke="currentColor" stroke-width="1" viewbox="0 0 24 24"><path d="M7 4v16l13-8z"></path></svg></button>
+<button aria-label="Impor Proyek" class="icon-info-btn custom-tooltip" data-ip-event-click="importProjectJSON()" data-tooltip="Impor Proyek (Ctrl+I)" type="button"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5"></path><path d="M5 17v4h14v-4"></path></svg></button>
+<button aria-label="Reset Camera" class="icon-info-btn custom-tooltip" data-ip-event-click="resetCamera()" data-tooltip="Reset Camera" type="button"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg></button>
+</div>
+<input accept=".json,application/json" data-ip-event-change="handleJSONFileSelected(event)" id="json-file-input" style="display:none" type="file"/>
+<input accept="image/*" data-ip-event-change="handleSpriteFileSelected(event)" id="sprite-file-input" multiple="" style="display:none" type="file"/>
+<aside class="left" id="left-panel">
+<div class="group-heading">WORLD</div>
+<div class="section-box folded" id="plane-section">
+<div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>PLANE</span></div></div>
+<div class="section-body">
+<div class="control-row"><span>Plane Size</span><span class="control-val" id="world-size-val">12 × 12 m²</span></div>
+<input class="thin-slider" data-ip-event-input="setWorldSize(this.value)" id="world-size-slider" max="48" min="8" step="2" type="range" value="12"/>
+<div class="control-row"><span>Grid</span><button aria-pressed="true" class="toggle-switch active" data-ip-event-click="toggleGridVisibility()" id="grid-toggle" type="button"></button></div>
+<div class="control-row"><span>Axis</span><button aria-pressed="true" class="toggle-switch active" data-ip-event-click="toggleAxisVisibility()" id="axis-toggle" type="button"></button></div>
+<div class="control-row"><span>Object radius active all</span><button aria-pressed="false" class="toggle-switch" data-ip-event-click="toggleAllObjectRadii()" id="all-object-radius-toggle" type="button"></button></div>
+</div>
+</div>
+<div class="section-box folded" id="camera-section">
+<div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>CAMERA</span></div></div>
+<div class="section-body">
+<div class="control-row"><span>Follow object</span><button aria-pressed="false" class="toggle-switch" data-ip-event-click="toggleFollowObject()" id="follow-object-toggle" type="button"></button></div>
+<div class="control-row"><span>Zoom</span><span class="control-val" id="cam-zoom-val">100%</span></div>
+<input class="thin-slider" data-ip-event-input="setCameraZoomFromSlider(this.value)" id="cam-zoom-slider" max="300" min="20" step="5" type="range" value="100"/>
+</div>
+</div>
+<div class="group-heading object-group-heading">OBJECT <span class="section-active-obj" id="obj-role-badge"></span></div>
+<div class="section-box folded" id="identity-section">
+<div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>IDENTITY</span></div></div>
+<div class="section-body identity-settings-body">
+<div class="control-row identity-setting-row"><span>Object name</span><input aria-label="Name" class="identity-name-input" data-ip-event-change="commitActiveObjectName(this.value)" data-ip-event-focus="this.dataset.previousName=this.value" data-ip-event-input="setActiveObjectNameLive(this.value)" disabled="" id="obj-name-input" placeholder="Object name"/></div>
+<div class="control-row identity-setting-row"><span>Role</span><button class="identity-role-button" data-ip-event-click="openIdentityRoleDropdown(event)" disabled="" id="obj-role-button" type="button"><span id="obj-role-text">Default object</span><span class="identity-role-arrow">▾</span></button></div>
+<div class="control-row"><span>Collision</span><button aria-pressed="true" class="toggle-switch active" data-ip-event-click="toggleActiveObjectCollision()" disabled="" id="obj-collision-toggle" type="button"></button></div>
+</div>
+</div>
+<div class="section-box folded" id="attribute-section">
+<div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>ATTRIBUTE</span></div></div>
+<div class="section-body">
+<div class="control-row"><span>HP</span><span class="control-val" id="obj-hp-val">100 / 100</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectStat('maxHp',this.value)" disabled="" id="obj-hp-slider" max="10000" min="100" step="100" type="range" value="100"/>
+<div class="control-row"><span>Attack</span><span class="control-val" id="obj-damage-val">10</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectStat('damage',this.value)" disabled="" id="obj-damage-slider" max="1000" min="10" step="10" type="range" value="10"/>
+<div class="control-row"><span>Attack interval</span><span class="control-val" id="obj-interval-val">0.2 s</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectStat('attackInterval',this.value)" disabled="" id="obj-interval-slider" max="1" min="0.2" step="0.1" type="range" value="0.2"/>
+</div>
+</div>
+<div class="section-box folded" id="mechanic-section">
+<div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>MECHANIC</span></div></div>
+<div class="section-body">
+<div class="control-row"><span>Move speed</span><span class="control-val" id="obj-speed-val">-</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectSpeed(this.value)" disabled="" id="obj-speed-slider" max="10" min="2" step="0.5" type="range" value="2"/>
+<div class="control-row"><span>Run speed</span><span class="control-val" id="obj-run-speed-val">-</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectRunSpeed(this.value)" disabled="" id="obj-run-speed-slider" max="10" min="2" step="0.5" type="range" value="6"/>
+<div class="control-row"><span>Hit area</span><span class="control-val" id="obj-hit-val">1.5 m</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectArea('hitArea',this.value)" disabled="" id="obj-hit-slider" max="10" min="0.25" step="0.25" type="range" value="1.5"/>
+<div class="control-row"><span>Attack area</span><span class="control-val" id="obj-attack-val">1.5 m</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectArea('attackArea',this.value)" disabled="" id="obj-attack-slider" max="10" min="1" step="0.25" type="range" value="1.5"/>
+<div class="control-row"><span>Detection area</span><span class="control-val" id="obj-detection-val">3 m</span></div><input class="thin-slider" data-ip-event-input="setActiveObjectArea('detectionArea',this.value)" disabled="" id="obj-detection-slider" max="10" min="1.5" step="0.25" type="range" value="3"/>
+</div>
+</div>
+<div class="section-box folded" id="npc-controls" style="display:none">
+<div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>NPC SETTINGS</span></div></div>
+<div class="section-body">
+<div class="control-row"><span>Enemy</span><button aria-pressed="false" class="toggle-switch" data-ip-event-click="toggleNpcSetting('enemy')" id="npc-enemy-toggle" type="button"></button></div>
+<div class="control-row"><span>Roaming</span><button aria-pressed="true" class="toggle-switch active" data-ip-event-click="toggleNpcSetting('roaming')" id="npc-roaming-toggle" type="button"></button></div>
+</div>
+</div>
+</aside>
+<button aria-label="Toggle Panel Kiri" class="panel-toggle" data-ip-event-click="toggleLeftPanel()" title="Buka / Tutup Panel Kiri">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<polyline points="15 18 9 12 15 6"></polyline>
+</svg>
+</button>
+<button aria-label="Perluas panel" class="right-expand-btn" data-ip-event-click="toggleRightPanelExpand()" id="right-expand-btn" title="Perluas panel ke kiri" type="button"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+<aside class="right-floating" id="right-panel">
+<div class="right-title">
+<span>OBJECTS</span>
+<div class="right-title-actions"><span id="right-count-badge" style="color:#888;font-weight:400">0</span></div>
+</div>
+<div class="right-panel-content">
+<div class="object-list" id="object-list">
+<div class="object-empty">Belum ada objek</div>
+</div>
+<div aria-hidden="true" class="right-empty-pane"></div>
+</div>
+</aside>
+<button aria-label="Perluas panel" class="lower-expand-btn" data-ip-event-click="toggleLowerPanelExpand()" id="lower-expand-btn" title="Perluas panel ke kiri" type="button"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+<aside class="right-lower" id="right-lower-panel">
+<div class="lower-title">
+<span>SPRITE &amp; ANIMATION</span>
+<span class="sprite-title-obj-name" id="sprite-active-obj-name"></span>
+</div>
+<div class="lower-panel-content">
+<div class="lower-main-pane">
+<div class="sprite-active-info">
+<div class="sprite-header-row">
+<select aria-label="Animation state" class="sprite-state-select" data-ip-event-change="setPanelAnimationState(this.value)" disabled="" id="sprite-state-select">
+<option value="Idle">Idle</option>
+<option value="Run">Run</option>
+<option value="Attack">Attack</option>
+</select>
+<select aria-label="Sprite direction" class="sprite-dir-select" data-ip-event-change="setPanelPreviewDirection(this.value)" disabled="" id="sprite-dir-select">
+<option value="front">front</option>
+<option value="frontright">frontright</option>
+<option value="right">right</option>
+<option value="rightback">rightback</option>
+<option value="back">back</option>
+<option value="backleft">backleft</option>
+<option value="left">left</option>
+<option value="leftfront">leftfront</option>
+</select>
+</div>
+<div class="sprite-preview-box" id="sprite-preview-box">
+<canvas aria-label="Sprite preview" id="sprite-preview-img"></canvas>
+<div class="sprite-fps-overlay" id="sprite-fps-overlay">
+<input aria-label="FPS animasi" class="thin-slider" data-ip-event-input="setPanelFps(this.value)" id="sprite-fps-slider" max="30" min="6" step="1" type="range" value="8"/>
+<span class="sprite-fps-val" id="sprite-fps-val">8 fps</span>
+</div>
+</div>
+</div>
+<div class="lower-panel-footer">
+<button class="action-btn" data-ip-event-click="triggerAddSprite()" disabled="" id="add-sprite-btn" type="button">Add Sprite</button>
+<button aria-label="Play" class="sprite-play-btn" data-ip-event-click="toggleSpritePreviewPlay()" id="sprite-play-btn" title="Play / Pause preview animasi" type="button"><svg fill="currentColor" viewbox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg><span>Play</span></button>
+</div>
+</div>
+<div class="lower-empty-pane" id="sprite-direction-pane">
+<div class="sprite-feedback" id="sprite-upload-feedback"></div>
+<div class="sprite-frame-list" id="sprite-frame-list"></div>
+</div>
+</div>
+</aside>
+<div aria-label="Command console" class="command-console" id="command-console" role="dialog">
+<div class="command-console-title"><span>COMMAND</span><span class="command-console-hint">ALT + C · ENTER · ESC</span></div>
+<input autocomplete="off" class="command-console-input" id="command-console-input" spellcheck="false" type="text" value="/"/>
+<div class="command-console-output" id="command-console-output"></div>
+</div>
+<input accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.svg" hidden="" id="cycle-files-input" multiple="" type="file"/>
+<!-- Konteks Menu Kanvas -->
+<div class="ctx-menu" id="context-menu">
+<button data-ip-event-click="handleAddObject()" type="button">Add Object</button>
+</div>
+<!-- Konteks Menu Objek / Daftar Objek -->
+<div class="ctx-menu" id="object-context-menu">
+<button data-ip-event-click="handleRenameObject()" type="button">Rename</button>
+<button data-ip-event-click="handleDuplicateObject()" type="button">Duplicate</button>
+<button data-ip-event-click="handleDeleteObject()" type="button">Delete</button>
+<button data-ip-event-click="openRoleDropdown(event)" data-ip-event-mouseenter="openRoleDropdown(event)" id="give-role-btn" type="button">
+<span>Give Role</span>
+<span style="font-size: 9px; opacity: 0.75;">▸</span>
+</button>
+</div>
+<!-- Dropdown Role (Player / NPC) -->
+<div class="role-dropdown" id="role-dropdown">
+<button data-ip-event-click="assignRoleToTarget('default')" type="button">Default object</button>
+<button data-ip-event-click="assignRoleToTarget('Player')" type="button">Player</button>
+<button data-ip-event-click="assignRoleToTarget('NPC')" type="button">NPC</button>
+</div>
+<div class="role-dropdown" id="identity-role-dropdown"><button data-ip-event-click="setActiveObjectRole('default')" type="button">Default object</button><button data-ip-event-click="setActiveObjectRole('Player')" type="button">Player</button><button data-ip-event-click="setActiveObjectRole('NPC')" type="button">NPC</button></div>
+<footer id="footer-bar">
+<div class="footer-left-group">
+<span id="footer-grid-info">1 petak = 1 m² | World: 12 × 12 m² | Player: 8 arah | NPC: Acak bebas</span>
+<span class="footer-active-coord" id="footer-active-coord"></span>
+</div>
+<button aria-label="Buka command" class="command-open-btn" id="command-open-btn" title="Buka command (Alt+C)" type="button">/</button>
+<span id="info-zoom">Zoom: 100%</span>
+</footer>
+<canvas id="c"></canvas><div id="sandbox-hud">WASD / Arrow: Move · Shift: Run · X: Attack</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
