@@ -9,7 +9,7 @@
 import { IPState, isSandboxMode } from '../core/state.js';
 import { applyRoleDefaults, npcDefaults, initNpcMotion } from '../world/roles.js';
 import { isNameUnique, findSpawnCell } from '../world/objectQueries.js';
-import { createObjectAtCell, updateLabels, deleteObjectById } from './objectEditor.js';
+import { createObjectAtCell, updateLabels } from './objectEditor.js';
 import { formatCoord, syncObjectPanel } from './inspector.js';
 import { d } from '../rendering/renderer.js';
 import { setCommandOutput, toggleCommandConsole, installCommandConsoleButton } from './commandConsole.js';
@@ -109,6 +109,9 @@ export function spawnEnemyNpcs(count) {
 /**
  * Memulai battle:
  * Spawn satu Player dan satu Enemy secara acak.
+ *
+ * Kedua spawn menggunakan daftar petak kosong yang sama,
+ * sehingga posisi Player dan Enemy dijamin berbeda.
  */
 export function spawnBattle() {
   // Cegah Player duplikat.
@@ -128,7 +131,7 @@ export function spawnBattle() {
   const half = IPState.world.size / 2;
   const availableCells = [];
 
-  // Kumpulkan seluruh petak kosong pada plane.
+  // Kumpulkan semua petak kosong pada plane.
   for (let cellU = -half; cellU < half; cellU++) {
     for (let cellV = -half; cellV < half; cellV++) {
       const u = cellU + 0.5;
@@ -146,7 +149,7 @@ export function spawnBattle() {
     }
   }
 
-  // Minimal 2 petak kosong untuk Player dan Enemy.
+  // Harus ada minimal dua petak kosong.
   if (availableCells.length < 2) {
     setCommandOutput(
       'Battle gagal: minimal membutuhkan 2 petak kosong.'
@@ -154,14 +157,28 @@ export function spawnBattle() {
     return;
   }
 
-  // Pilih posisi Player secara acak.
+  // ==========================================
+  // PILIH POSISI RANDOM
+  // ==========================================
+
+  // Ambil petak untuk Player.
   const playerIndex = Math.floor(
     Math.random() * availableCells.length
   );
 
   const playerCell = availableCells.splice(playerIndex, 1)[0];
 
-  // Spawn Player.
+  // Ambil petak untuk Enemy dari sisa petak.
+  const enemyIndex = Math.floor(
+    Math.random() * availableCells.length
+  );
+
+  const enemyCell = availableCells[enemyIndex];
+
+  // ==========================================
+  // SPAWN PLAYER
+  // ==========================================
+
   const player = createObjectAtCell(
     playerCell.cellU,
     playerCell.cellV,
@@ -169,18 +186,48 @@ export function spawnBattle() {
     true
   );
 
-  // Spawn satu Enemy di petak kosong lainnya.
-  const spawned = spawnEnemyNpcs(1);
+  // ==========================================
+  // SPAWN ENEMY
+  // ==========================================
 
-  // Jika Enemy gagal dibuat, hapus Player agar tidak terjadi battle setengah jadi.
-  if (spawned !== 1) {
-    deleteObjectById(player.id);
+  const id = IPState.world.nextObjectId++;
 
-    setCommandOutput(
-      'Battle gagal: Enemy tidak dapat dibuat.'
-    );
-    return;
+  let name = 'Enemy ' + id;
+
+  // Pastikan nama enemy unik.
+  while (!isNameUnique(name, -1)) {
+    name = 'Enemy ' + IPState.world.nextObjectId++;
   }
+
+  const enemy = {
+    id,
+    name,
+    role: 'NPC',
+    collision: true,
+    u: enemyCell.cellU + 0.5,
+    v: enemyCell.cellV + 0.5,
+    h: 0,
+    vx: 0,
+    vz: 0,
+    changeTimer: 0
+  };
+
+  // Terapkan sistem role NPC.
+  applyRoleDefaults(enemy, 'NPC');
+
+  // Tandai sebagai musuh.
+  enemy.enemy = true;
+
+  // Inisialisasi behavior dan gerakan.
+  npcDefaults(enemy);
+  initNpcMotion(enemy);
+
+  // Tambahkan Enemy ke world.
+  IPState.world.cubes.push(enemy);
+
+  // ==========================================
+  // SELEKSI PLAYER
+  // ==========================================
 
   // Pastikan Player tetap menjadi objek aktif.
   IPState.editor.activeObjectId = player.id;
@@ -190,7 +237,7 @@ export function spawnBattle() {
   d();
 
   setCommandOutput(
-    'Battle dimulai! Player dan 1 Enemy berhasil spawn secara acak.'
+    'Battle dimulai! Player dan Enemy berhasil spawn secara acak.'
   );
 }
 
