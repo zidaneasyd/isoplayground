@@ -114,146 +114,268 @@ export function spawnEnemyNpcs(count) {
  * sehingga posisi Player dan Enemy dijamin berbeda.
  */
 
+
 export function spawnBattle() {
-  // Cegah Player duplikat.
-  const existingPlayer = IPState.world.cubes.find(
-    object => object.role === 'Player'
-  );
+  let stage = 'persiapan';
 
-  if (existingPlayer) {
-    setCommandOutput(
-      'Player sudah ada: "' +
-      existingPlayer.name +
-      '". Hapus Player lama sebelum memulai battle.'
-    );
-    return;
-  }
+  try {
+    const cubes = IPState.world.cubes;
+    const half = IPState.world.size / 2;
 
-  const half = IPState.world.size / 2;
-  const availableCells = [];
+    // Cari Player dan Enemy yang sudah ada.
+    const existingPlayer = cubes.find(
+      object => object.role === 'Player'
+    ) || null;
 
-  // Cari semua petak kosong di plane.
-  for (let cellU = -half; cellU < half; cellU++) {
-    for (let cellV = -half; cellV < half; cellV++) {
-      const u = cellU + 0.5;
-      const v = cellV + 0.5;
+    const existingEnemy = cubes.find(
+      object => object.role === 'NPC' && object.enemy === true
+    ) || null;
 
-      const occupied = IPState.world.cubes.some(object =>
-        object.h === 0 &&
-        Math.abs(object.u - u) < 0.95 &&
-        Math.abs(object.v - v) < 0.95
-      );
+    // Kumpulkan petak kosong.
+    stage = 'mencari posisi';
 
-      if (!occupied) {
-        availableCells.push({ cellU, cellV });
+    const availableCells = [];
+
+    for (let cellU = -half; cellU < half; cellU++) {
+      for (let cellV = -half; cellV < half; cellV++) {
+        const u = cellU + 0.5;
+        const v = cellV + 0.5;
+
+        const occupied = cubes.some(object =>
+          Number(object.h ?? 0) === 0 &&
+          Math.abs(object.u - u) < 0.9999 &&
+          Math.abs(object.v - v) < 0.9999
+        );
+
+        if (!occupied) {
+          availableCells.push({ cellU, cellV });
+        }
       }
     }
-  }
 
-  if (availableCells.length < 2) {
-    setCommandOutput(
-      'Battle gagal: minimal membutuhkan 2 petak kosong.'
-    );
-    return;
-  }
+    // Pilih posisi Player jika belum ada.
+    let playerCell = null;
 
-  // Pilih posisi Player secara acak.
-  const playerIndex = Math.floor(
-    Math.random() * availableCells.length
-  );
+    if (!existingPlayer) {
+      if (availableCells.length === 0) {
+        throw new Error('Tidak tersedia petak untuk Player.');
+      }
 
-  const playerCell = availableCells.splice(playerIndex, 1)[0];
+      const index = Math.floor(
+        Math.random() * availableCells.length
+      );
 
-  // Cari posisi Enemy secara acak di sekitar Player.
-  // Jarak maksimum 3 petak agar keduanya mudah terlihat.
-  const nearbyCells = availableCells.filter(cell => {
-    const distance = Math.hypot(
-      cell.cellU - playerCell.cellU,
-      cell.cellV - playerCell.cellV
-    );
-
-    return distance <= 3;
-  });
-
-  // Jika area sekitar penuh, gunakan petak kosong lainnya.
-  const enemyPool = nearbyCells.length > 0
-    ? nearbyCells
-    : availableCells;
-
-  const enemyCell = enemyPool[
-    Math.floor(Math.random() * enemyPool.length)
-  ];
-
-  // Buat Player melalui sistem object editor.
-  const player = createObjectAtCell(
-    playerCell.cellU,
-    playerCell.cellV,
-    'Player',
-    true
-  );
-
-  // Buat NPC melalui sistem object editor juga.
-  // makeActive = false agar Player tetap menjadi objek aktif.
-  const enemy = createObjectAtCell(
-    enemyCell.cellU,
-    enemyCell.cellV,
-    'NPC',
-    false
-  );
-
-  // Terapkan statistik dan perilaku NPC.
-  applyRoleDefaults(enemy, 'NPC');
-
-  // Tandai NPC sebagai musuh.
-  enemy.enemy = true;
-
-  // Berikan nama Enemy yang unik.
-  let enemyName = 'Enemy ' + enemy.id;
-  let suffix = 2;
-
-  while (!isNameUnique(enemyName, enemy.id)) {
-    enemyName = 'Enemy ' + enemy.id + ' (' + suffix + ')';
-    suffix++;
-  }
-
-  enemy.name = enemyName;
-
-  // Pastikan Player tetap terpilih.
-  IPState.editor.activeObjectId = player.id;
-
-  // Perbarui daftar objek, inspector, dan Canvas.
-  updateLabels();
-  syncObjectPanel();
-  d();
-
-  setCommandOutput(
-    'Battle berhasil! 1 Player dan 1 NPC Enemy dibuat.'
-  );
-}
-/**
- * Menjalankan command dari command console.
- */
-export function executeCommandLine(raw) {
-  const command = String(raw || '').trim();
-
-  if (!command || command === '/') return;
-
-  const parts = command.split(/\s+/);
-  const commandName = parts[0].toLowerCase();
-
-
-  // ==========================================
-  // COMMAND: /battle
-  // ==========================================
-  if (commandName === '/battle') {
-    if (parts.length > 1) {
-      setCommandOutput('Gunakan /battle tanpa argumen.');
-      return;
+      playerCell = availableCells.splice(index, 1)[0];
     }
 
-    spawnBattle();
-    return;
+    // Pilih posisi Enemy jika belum ada.
+    let enemyCell = null;
+
+    if (!existingEnemy) {
+      if (availableCells.length === 0) {
+        throw new Error('Tidak tersedia petak untuk NPC Enemy.');
+      }
+
+      const anchor = existingPlayer
+        ? { u: existingPlayer.u, v: existingPlayer.v }
+        : {
+            u: playerCell.cellU + 0.5,
+            v: playerCell.cellV + 0.5
+          };
+
+      // Prioritaskan posisi yang dekat dengan Player.
+      const nearbyCells = availableCells.filter(cell => {
+        const u = cell.cellU + 0.5;
+        const v = cell.cellV + 0.5;
+
+        return Math.hypot(u - anchor.u, v - anchor.v) <= 3;
+      });
+
+      const pool = nearbyCells.length > 0
+        ? nearbyCells
+        : availableCells;
+
+      const index = Math.floor(Math.random() * pool.length);
+      enemyCell = pool[index];
+    }
+
+    // Siapkan ID unik.
+    stage = 'menyiapkan ID objek';
+
+    const usedIds = new Set(
+      cubes.map(object => String(object.id))
+    );
+
+    let nextId = Number(IPState.world.nextObjectId);
+
+    if (!Number.isSafeInteger(nextId) || nextId < 1) {
+      nextId = 1;
+    }
+
+    function allocateId() {
+      while (usedIds.has(String(nextId))) {
+        nextId++;
+      }
+
+      const id = nextId++;
+      usedIds.add(String(id));
+
+      return id;
+    }
+
+    // Siapkan nama unik.
+    const usedNames = new Set(
+      cubes.map(object =>
+        String(object.name ?? '').trim().toLowerCase()
+      )
+    );
+
+    function uniqueName(base) {
+      let name = base;
+      let suffix = 2;
+
+      while (usedNames.has(name.toLowerCase())) {
+        name = base + ' (' + suffix + ')';
+        suffix++;
+      }
+
+      usedNames.add(name.toLowerCase());
+      return name;
+    }
+
+    // Buat data combatant tanpa efek samping editor.
+    function makeCombatant(role, u, v) {
+      const isPlayer = role === 'Player';
+      const id = allocateId();
+
+      return {
+        id,
+        name: uniqueName(
+          isPlayer ? 'Player ' + id : 'Enemy ' + id
+        ),
+
+        role,
+        collision: true,
+
+        u,
+        v,
+        h: 0,
+
+        vx: 0,
+        vz: 0,
+        changeTimer: 0,
+
+        speed: 2,
+        runSpeed: 6,
+
+        hitArea: 1.5,
+        attackArea: 1.5,
+        detectionArea: 3,
+
+        maxHp: isPlayer ? 300 : 100,
+        hp: isPlayer ? 300 : 100,
+
+        damage: isPlayer ? 20 : 10,
+        attackInterval: isPlayer ? 0.5 : 1,
+        attackCooldown: 0,
+
+        enemy: !isPlayer,
+        roaming: true,
+
+        homeU: u,
+        homeV: v
+      };
+    }
+
+    // Siapkan semua objek sebelum memasukkannya ke World.
+    stage = 'membuat objek';
+
+    const newObjects = [];
+
+    let player = existingPlayer;
+    let enemy = existingEnemy;
+
+    if (!player) {
+      player = makeCombatant(
+        'Player',
+        playerCell.cellU + 0.5,
+        playerCell.cellV + 0.5
+      );
+
+      newObjects.push(player);
+    }
+
+    if (!enemy) {
+      enemy = makeCombatant(
+        'NPC',
+        enemyCell.cellU + 0.5,
+        enemyCell.cellV + 0.5
+      );
+
+      newObjects.push(enemy);
+    }
+
+    // Masukkan objek sekaligus.
+    stage = 'memasukkan objek ke World';
+
+    if (newObjects.length > 0) {
+      cubes.push(...newObjects);
+      IPState.world.nextObjectId = nextId;
+    }
+
+    // Pastikan Player menjadi objek aktif.
+    IPState.editor.activeObjectId = player.id;
+
+    // Verifikasi hasil spawn dari World State.
+    const verifiedPlayer = cubes.some(
+      object => object.role === 'Player'
+    );
+
+    const verifiedEnemy = cubes.some(
+      object => object.role === 'NPC' && object.enemy === true
+    );
+
+    if (!verifiedPlayer || !verifiedEnemy) {
+      throw new Error(
+        'Verifikasi gagal: Player=' + verifiedPlayer +
+        ', Enemy=' + verifiedEnemy
+      );
+    }
+
+    // Perbarui tampilan.
+    stage = 'memperbarui daftar objek';
+
+    updateLabels();
+    syncObjectPanel();
+
+    stage = 'menggambar Canvas';
+
+    d();
+
+    const playerCount = cubes.filter(
+      object => object.role === 'Player'
+    ).length;
+
+    const enemyCount = cubes.filter(
+      object => object.role === 'NPC' && object.enemy === true
+    ).length;
+
+    setCommandOutput(
+      'Battle siap! Player: ' + playerCount +
+      ' | Enemy NPC: ' + enemyCount +
+      ' | Total objek: ' + cubes.length
+    );
+
+  } catch (error) {
+    console.error('[IsoPlayground Battle Error]', error);
+
+    setCommandOutput(
+      'Battle gagal pada tahap "' + stage +
+      '": ' + (error.message || error)
+    );
   }
+}
+
 
 
   // ==========================================
