@@ -23,24 +23,16 @@ export function ensureCombatDefaults(object) {
 }
 
 export function getAttackKnockbackDirection(attacker, target) {
-  let du = 0, dv = 0;
-  if (attacker && attacker.role === 'Player' && attacker.lastWorldMove) {
-    // Gunakan segmen U/V terakhir yang benar-benar ditempuh Player.
-    const move = attacker.lastWorldMove;
-    if (
-      Number.isFinite(move.fromU) && Number.isFinite(move.fromV) &&
-      Number.isFinite(move.toU) && Number.isFinite(move.toV)
-    ) {
-      du = move.toU - move.fromU;
-      dv = move.toV - move.fromV;
-    }
-  }
-  if (Math.hypot(du, dv) < 1e-6 && attacker) {
-    du = target.u - attacker.u;
-    dv = target.v - attacker.v;
-  }
+  // Knockback follows the direction from attacker to target.
+  const du = target.u - attacker.u;
+  const dv = target.v - attacker.v;
+
   const length = Math.hypot(du, dv) || 1;
-  return { du: du / length, dv: dv / length };
+
+  return {
+    du: du / length,
+    dv: dv / length
+  };
 }
 
 export function applyKnockback(target, attacker) {
