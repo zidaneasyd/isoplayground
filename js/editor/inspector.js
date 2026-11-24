@@ -210,16 +210,3 @@ export const inspectorActions = Object.freeze({
   syncObjectPanel,
   adjustActiveObjectScale,
 });
-
-export function adjustActiveObjectScale(direction) {
-  const object = IPState.world.cubes.find(
-    item => item.id === IPState.editor.activeObjectId
-  );
-
-  if (!object || object.role !== 'default') return;
-
-  object.scale = stepObjectScale(object.scale, direction);
-
-  syncObjectPanel();
-  d();
-}

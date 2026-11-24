@@ -10,7 +10,6 @@ import { ensureObjectStateFrames } from '../rendering/sprites.js';
 import { clampSpriteFps } from '../core/spriteData.js';
 import { getRoleCombatDefaults, normalizeSpeed } from '../world/roles.js';
 import { normalizeObjectScale } from '../world/objectScale.js';
-import { normalizeObjectScale } from '../world/objectScale.js';
 
 export function buildProjectPayload() {
   // Persist only stable object identity, coordinates, and attributes.
