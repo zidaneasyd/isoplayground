@@ -52,6 +52,15 @@ export function executeCommandLine(raw) {
   const command = String(raw || '').trim();
   if (!command || command === '/') return;
   const parts = command.split(/\s+/);
+if (parts[0].toLowerCase() === '/battle') {
+  if (parts.length > 1) {
+    setCommandOutput('Gunakan /battle tanpa argumen.');
+    return;
+  }
+
+  setCommandOutput('Command /battle dikenali. Fungsi battle belum tersedia.');
+  return;
+}
   if (parts[0].toLowerCase() === '/enemy') {
     if (parts.length > 2 || (parts[1] && !/^[1-9]$/.test(parts[1]))) {
       setCommandOutput('Gunakan /enemy atau /enemy [1-9].');
