@@ -44,6 +44,7 @@ export function createObjectRecordAtCell(objects, currentNextId, cellU, cellV, r
     u: cellU + 0.5,
     v: cellV + 0.5,
     h: 0,
+    scale: 1,
     vx: 0,
     vz: 0,
     changeTimer: 0

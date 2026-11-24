@@ -7,6 +7,7 @@
 import { IPConfig } from '../core/config.js';
 import { clampSpriteFps, createEmptyStateFramesMap } from '../core/spriteData.js';
 import { normalizeSpeed, setObjectRoleDefault } from '../world/roles.js';
+import { normalizeObjectScale } from '../world/objectScale.js';
 
 import { normalizeEvenSize } from '../world/worldConfig.js';
 
@@ -64,6 +65,9 @@ export function parseProjectJSON(rawText, options = {}) {
       homeU: importedU, homeV: importedV,
       u: importedU, v: importedV,
       h: typeof item.h === 'number' && !isNaN(item.h) ? item.h : 0,
+      scale: role === 'default'
+  ? normalizeObjectScale(item.scale)
+  : 1,
       ...(() => {
         const loadedStateFrames = createEmptyStateFramesMap();
         if (item.stateFrames && typeof item.stateFrames === 'object') {

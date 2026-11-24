@@ -4,10 +4,11 @@
  * Berisi bentuk kubus, kotak batas sprite, dan uji titik-poligon. Modul ini
  * tidak menggambar ke Canvas dan tidak menyimpan state renderer.
  */
-import { getCubeHalfExtent } from '../world/collision.js';
+import { normalizeObjectScale } from '../world/objectScale.js';
 
 export function getCubeFaces(p3d, object) {
-  const halfCube = getCubeHalfExtent(object);
+  const scale = normalizeObjectScale(object.scale);
+  const halfCube = 0.5 * scale;
   const uMin = object.u - halfCube;
   const uMax = object.u + halfCube;
   const vMin = object.v - halfCube;
@@ -18,10 +19,10 @@ export function getCubeFaces(p3d, object) {
   const b10 = p3d(uMax, vMin, baseHeight);
   const b11 = p3d(uMax, vMax, baseHeight);
   const b01 = p3d(uMin, vMax, baseHeight);
-  const t00 = p3d(uMin, vMin, baseHeight + 1);
-  const t10 = p3d(uMax, vMin, baseHeight + 1);
-  const t11 = p3d(uMax, vMax, baseHeight + 1);
-  const t01 = p3d(uMin, vMax, baseHeight + 1);
+  const t00 = p3d(uMin, vMin, baseHeight + scale);
+  const t10 = p3d(uMax, vMin, baseHeight + scale);
+  const t11 = p3d(uMax, vMax, baseHeight + scale);
+  const t01 = p3d(uMin, vMax, baseHeight + scale);
 
   return {
     b00, b10, b11, b01,
@@ -55,7 +56,8 @@ export function getSpriteScreenRect(p3d, object, sprite) {
   const ratio = naturalWidth / Math.max(1, naturalHeight);
   const baseHeight = (object.h ?? 0);
   const foot = p3d(object.u, object.v, baseHeight);
-  const top = p3d(object.u, object.v, baseHeight + 2);
+  const scale = normalizeObjectScale(object.scale);
+  const top = p3d(object.u, object.v, baseHeight + (2 * scale));
   const drawHeight = Math.max(1, Math.abs(foot.y - top.y));
   const drawWidth = drawHeight * ratio;
   return {

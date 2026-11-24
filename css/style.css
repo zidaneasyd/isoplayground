@@ -762,3 +762,38 @@
   .command-open-btn{background:none;border:1px solid #484848;border-radius:4px;color:#bdbdbd;font-weight:700;font-size:11px;font-family:inherit;line-height:1;padding:3px 7px;margin:0 8px;cursor:pointer;pointer-events:auto;}
   .command-open-btn:hover{color:#fff;border-color:#777;}
 
+.scale-stepper {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.scale-step-btn {
+  width: 25px;
+  height: 23px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 4px;
+  color: #eee;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.scale-step-btn:hover {
+  background: rgba(255,255,255,.17);
+}
+
+#obj-scale-val {
+  min-width: 38px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.scale-hint {
+  font-size: 10px;
+  color: #777;
+  text-align: right;
+}

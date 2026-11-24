@@ -9,6 +9,7 @@ import { IPState } from '../core/state.js';
 import { npcDefaults, normalizeSpeed } from '../world/roles.js';
 import { syncSpritePanel } from './spriteInspector.js';
 import { d } from '../rendering/renderer.js';
+import { normalizeObjectScale,stepObjectScale } from '../world/objectScale.js';
 
 export function getRoleDisplay(role) {
   if (role === 'Player') return { label: 'Player', cls: 'role-player' };
@@ -41,7 +42,19 @@ export function toggleNpcSetting(setting) {
   syncObjectPanel();
   d();
 }
+/** Increase or decrease the selected default object's visual scale. */
+export function adjustActiveObjectScale(direction) {
+  const object = IPState.world.cubes.find(
+    item => item.id === IPState.editor.activeObjectId
+  );
 
+  if (!object || object.role !== 'default') return;
+
+  object.scale = stepObjectScale(object.scale, direction);
+
+  syncObjectPanel();
+  d();
+}
 /** Update visibility and active state of the NPC-specific control group. */
 export function syncNpcControls(object) {
   const panel = document.getElementById('npc-controls');
@@ -76,8 +89,11 @@ export function syncObjectPanel() {
   const hpSlider = document.getElementById('obj-hp-slider');
   const damageSlider = document.getElementById('obj-damage-slider');
   const intervalSlider = document.getElementById('obj-interval-slider');
+  const scaleSection = document.getElementById('visual-section');
+  const scaleValue = document.getElementById('obj-scale-val');
 
   if (!object) {
+    if (scaleSection) scaleSection.style.display = 'none';
     syncSpritePanel();
     document.getElementById('attribute-section').style.display = '';
     document.getElementById('mechanic-section').style.display = '';
@@ -104,6 +120,17 @@ export function syncObjectPanel() {
     return;
   }
 
+  if (object.role === 'default') {
+    object.scale = normalizeObjectScale(object.scale);
+
+    if (scaleSection) scaleSection.style.display = '';
+    if (scaleValue) {
+      scaleValue.textContent = object.scale.toFixed(1) + '×';
+    }
+  } else {
+    if (scaleSection) scaleSection.style.display = 'none';
+  }
+  
   object.collision = object.collision !== false;
   nameInput.disabled = false;
   if (document.activeElement !== nameInput) nameInput.value = object.name;
@@ -180,5 +207,19 @@ export const inspectorActions = Object.freeze({
   syncFooterActiveCoord,
   toggleNpcSetting,
   syncNpcControls,
-  syncObjectPanel
+  syncObjectPanel,
+  adjustActiveObjectScale,
 });
+
+export function adjustActiveObjectScale(direction) {
+  const object = IPState.world.cubes.find(
+    item => item.id === IPState.editor.activeObjectId
+  );
+
+  if (!object || object.role !== 'default') return;
+
+  object.scale = stepObjectScale(object.scale, direction);
+
+  syncObjectPanel();
+  d();
+}

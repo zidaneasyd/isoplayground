@@ -89,6 +89,38 @@
 <div class="control-row"><span>Collision</span><button aria-pressed="true" class="toggle-switch active" data-ip-event-click="toggleActiveObjectCollision()" disabled="" id="obj-collision-toggle" type="button"></button></div>
 </div>
 </div>
+<div class="section-box folded" id="visual-section">
+  <div class="section-header"
+       data-ip-event-click="toggleSection(this)">
+    <div class="section-header-left">
+      <span>VISUAL</span>
+    </div>
+  </div>
+
+  <div class="section-body">
+    <div class="control-row">
+      <span>Scale</span>
+
+      <div class="scale-stepper">
+        <button
+          class="scale-step-btn"
+          data-ip-event-click="adjustActiveObjectScale(-1)"
+          type="button">−</button>
+
+        <span class="control-val" id="obj-scale-val">1.0×</span>
+
+        <button
+          class="scale-step-btn"
+          data-ip-event-click="adjustActiveObjectScale(1)"
+          type="button">+</button>
+      </div>
+    </div>
+
+    <div class="scale-hint">
+      Step 0.2 · Minimum 0.2
+    </div>
+  </div>
+</div>
 <div class="section-box folded" id="attribute-section">
 <div class="section-header" data-ip-event-click="toggleSection(this)"><div class="section-header-left"><svg class="section-chevron" fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg><span>ATTRIBUTE</span></div></div>
 <div class="section-body">
